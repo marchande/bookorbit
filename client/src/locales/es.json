@@ -14,7 +14,9 @@
     "previous": "Anterior",
     "retry": "Reintentar",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "show": "Mostrar",
+    "hide": "Ocultar"
   },
   "settings": {
     "privacySharing": {
@@ -1369,6 +1371,7 @@
         "display": "Visualización",
         "reader": "Lector",
         "metadata": "Metadatos",
+        "usersAccess": "Usuarios y Acceso",
         "email": "Correo electrónico",
         "opds": "OPDS",
         "kobo": "Kobo",
@@ -2792,8 +2795,190 @@
       "tabs": {
         "file-naming": "Nomenclatura de archivos",
         "book-dock": "Book Dock",
+        "requests": "Solicitudes",
         "maintenance": "Mantenimiento",
         "audit-log": "Registro de auditoría"
+      },
+      "requests": {
+        "title": "Solicitudes",
+        "subtitle": "Dónde se encuentran las versiones, qué las obtiene y qué sucede una vez que llegan.",
+        "tabs": {
+          "sources": "Fuentes",
+          "clients": "Descargar clientes",
+          "automation": "Automatización"
+        },
+        "loading": "Cargando clientes de descarga...",
+        "clients": "Descargar clientes",
+        "addClient": "Agregar cliente",
+        "editClient": "Editar cliente",
+        "deleteClient": "Eliminar {name}",
+        "clientsEmpty": {
+          "title": "Aún no hay cliente de descarga",
+          "body": "Una descarga HTTP directa no necesita ningún cliente. Conecta uno para que BookOrbit pueda obtener también como torrent lo que ofrece un tracker.",
+          "note": "qBittorrent, Transmisión y Deluge son soportados."
+        },
+        "summary": "{type} - categoría {category}, prioridad {priority}",
+        "disabled": "Desactivado",
+        "test": "Probar conexión",
+        "testSaveFirst": "Guarda tus cambios antes de probar",
+        "testOk": "Conectado a {client} {version}",
+        "testOkNoVersion": "Conectado a {client}",
+        "lastTestOk": "Última prueba de {time}: conectado",
+        "lastTestFailed": "Última prueba {time}: {error}",
+        "saved": "Cliente de descarga guardado",
+        "deleted": "Cliente de descarga eliminado",
+        "clientTypes": {
+          "qbittorrent": "qBittorrent",
+          "transmission": "Transmission",
+          "deluge": "Deluge"
+        },
+        "color": {
+          "label": "Color",
+          "hint": "Marca este cliente en los detalles de transferencia. El protocolo de transferencia mantiene su propio color.",
+          "none": "Sin color"
+        },
+        "fields": {
+          "name": "Nombre",
+          "type": "Tipo de cliente",
+          "baseUrl": "URL base",
+          "username": "Nombre de usuario",
+          "password": "Contraseña",
+          "passwordKeep": "Dejar en blanco para mantener la contraseña almacenada",
+          "passwordClear": "Limpiar",
+          "passwordKeepAction": "Mantener",
+          "passwordWillClear": "La contraseña almacenada se elimina al guardar",
+          "category": "Categoría",
+          "categoryHint": "Etiqueta los torrents que añade BookOrbit, para que solo actúe sobre los suyos.",
+          "priority": "Prioridad",
+          "enabled": "Activado",
+          "useHardlinks": "Usar enlaces fuertes",
+          "allowPrivateAddress": "Permitir direcciones privadas",
+          "allowPrivateAddressHint": "Necesario cuando el cliente se ejecuta en su red local o en la misma máquina.",
+          "passwordBrief": "Almacenado de forma cifrada.",
+          "useHardlinksBrief": "Semillas sin usar el disco dos veces. Vuelve a una copia a través de sistemas de archivos."
+        },
+        "mappings": {
+          "title": "Mapeos de rutas",
+          "hint": "Traduce las rutas que comunica el cliente a rutas que BookOrbit pueda abrir. Es necesario cuando ambos se ejecutan en contenedores separados.",
+          "add": "Agregar mapeo",
+          "remove": "Eliminar mapeo",
+          "remotePath": "Ruta del cliente",
+          "localPath": "Ruta de BookOrbit",
+          "brief": "Obligatorio. Define el directorio desde el que BookOrbit puede importar. Cuando el cliente ve los mismos archivos en las mismas rutas, asigna el directorio de descargas a sí mismo.",
+          "identityExample": "¿Mismo sistema de archivos? Utilice la misma ruta en ambos lados, por ejemplo /downloads a la izquierda y /downloads a la derecha."
+        },
+        "hardlink": {
+          "test": "Prueba de enlace fuerte hardlink",
+          "checking": "Comprobando...",
+          "works": "Los enlaces fuertes hardlinks funcionan aquí: las importaciones no usarán el disco dos veces.",
+          "unavailable": "Los enlaces fuertes hardlinks no están disponibles aquí: las importaciones se copiarán y utilizarán el doble de espacio.",
+          "link_refused": "Este sistema de archivos ha rechazado el enlace ({code}): las importaciones se copiarán dos veces, utilizando el espacio.",
+          "download_dir_unwritable": "BookOrbit no puede escribir en el directorio de descarga ({code}), por lo que no se ha podido probar el enlace fuerte (hardlink).",
+          "localMissing": "BookOrbit no puede ver esa ruta.",
+          "dockMissing": "La carpeta de Book Dock no se puede leer."
+        },
+        "reconciliation": {
+          "action": "Reconciliar",
+          "clean": "Cada elemento del cliente que pertenece a BookOrbit coincide con un intento de descarga conservado en BookOrbit.",
+          "unsupported": "Este cliente no puede enumerar los elementos mediante el marcador de propiedad de BookOrbit. Para Deluge, activa el plugin Label; para Transmission, configura una carpeta de categoría.",
+          "truncated": "El cliente devolvió más de 1.000 objetos propios. Resuelve las entradas visibles y luego reconcilia de nuevo.",
+          "orphan": "Ningún intento de descarga de BookOrbit conservado es propietario de este elemento del cliente.",
+          "failedAttempt": "El cliente todavía tiene este objeto, pero su intento de \"{title}\" ha fallado.",
+          "missing": "Este intento {status} ya no está presente en el cliente de descarga.",
+          "adopt": "Adjuntar a {title}",
+          "adopted": "Adjuntar el elemento del cliente a {title}",
+          "remove": "Eliminar del Cliente",
+          "removed": "Eliminado el elemento cliente huérfano",
+          "removeTitle": "¿Eliminar este elemento de cliente huérfano?",
+          "removeDescription": "{name} se quita del cliente de descarga. Los archivos descargados se conservan.",
+          "notOrphan": "Ese elemento del cliente todavía está asociado a un intento de descarga de BookOrbit.",
+          "notAdoptable": "Ese elemento del cliente o intento fallido cambió y ya no se puede conectar. Vuelve a conectarlo."
+        },
+        "errors": {
+          "loadFailed": "No se han podido cargar los clientes de descarga",
+          "saveFailed": "No se ha podido guardar ese cliente de descarga",
+          "deleteFailed": "No se ha podido eliminar ese cliente de descarga",
+          "testFailed": "No se pudo llegar a ese cliente de descarga",
+          "nameAndUrlRequired": "Se requiere un nombre y una URL base",
+          "nameTaken": "Ya existe un cliente de descarga con ese nombre",
+          "urlUnsafe": "No se ha podido acceder a esa URL base. Compruebe la dirección y que utilice http o https.",
+          "urlPrivate": "Esa dirección está en una red privada o local. Active \"Permitir direcciones privadas\" si el cliente se ejecuta allí.",
+          "encryptionKeyMissing": "Establecer BOOK_REQUEST_ENCRYPTION_KEY antes de guardar una contraseña. Generar una con: openssl rand -hex 32",
+          "encryptionKeyChanged": "No se ha podido leer la contraseña almacenada. BOOK_REQUEST_ENCRYPTION_KEY puede haber cambiado desde que fue guardada.",
+          "pathNotAbsolute": "Los mapeos de rutas deben usar rutas absolutas en ambos lados",
+          "nameRequired": "Dar un nombre a este cliente.",
+          "urlRequired": "Introduce la dirección en la que BookOrbit debe conectarse a este cliente.",
+          "mappingRequired": "Agregue al menos un mapeo de rutas, de modo que BookOrbit sepa de qué directorio puede importar."
+        },
+        "encryptionKeyMissing": "BOOK_REQUEST_ENCRYPTION_KEY no está establecido, por lo que no se puede guardar una contraseña de cliente. Generar una con: openssl rand -hex 32",
+        "confirmDelete": {
+          "title": "¿Eliminar este cliente de descarga?",
+          "description": "La dirección de {name} y la contraseña almacenada se eliminan, y las solicitudes de descarga dejan de actualizarse. Desactívalo en su lugar para mantener los detalles.",
+          "confirm": "Eliminar cliente"
+        },
+        "indexers": {
+          "title": "Indexadores de torrent",
+          "hint": "Tu propio Prowlarr, Jackett o NZBHydra, mediante Torznab. Añade uno por cada fuente de Torznab que quieras buscar.",
+          "allDisabled": "Cada fuente de abajo está desactivada, así que ninguna búsqueda de solicitud encontrará nada. Cambie al menos una.",
+          "loading": "Cargando indexadores...",
+          "empty": {
+            "title": "Aún no hay fuentes",
+            "body": "BookOrbit no incluye fuentes propias, por lo que una búsqueda de solicitudes no encuentra nada hasta que añadas una. Hay dos vías.",
+            "bodyOneWay": "BookOrbit no incluye fuentes propias, por lo que una búsqueda de solicitudes no encuentra nada hasta que añadas una.",
+            "responsibility": "Tú eres responsable de las fuentes que añadas al indexador.",
+            "pluginTitle": "Instalar un plugin",
+            "pluginBody": "Un archivo que enseña a BookOrbit a buscar en un sitio específico. Tú lo proporcionas y, después, completas su configuración.",
+            "torznabTitle": "Añadir un indexador Torznab",
+            "torznabBody": "Indica una fuente de Prowlarr, Jackett o NZBHydra que ya tengas configurada. Una por cada fuente."
+          },
+          "add": "Añadir indexador",
+          "edit": "Editar indexador",
+          "delete": "Eliminar {name}",
+          "none": "No hay indexador todavía.",
+          "disabled": "Desactivado",
+          "test": "Probar conexión",
+          "testSaveFirst": "Guarda tus cambios antes de probar",
+          "testOk": "Conectado a {name}",
+          "toggleAria": "Buscar con {name}",
+          "enabledNotice": "Se buscará {name}",
+          "disabledNotice": "No se buscará {name}",
+          "lastTestOk": "Última prueba {time}: conectada",
+          "lastTestFailed": "Última prueba {time}: {error}",
+          "saved": "Indexador guardado",
+          "deleted": "Fuente eliminada",
+          "unavailable": "Esta instalación no tiene ningún tipo de indexador \"{type}\". Cambie el tipo o elimine su plugin y la configuración guardada.",
+          "pluginFailed": "El plugin en \"{directory}\" no se cargó: {reason}",
+          "network": {
+            "title": "Red avanzada",
+            "hint": "Solo es necesario cuando la ruta predeterminada a esta fuente no funciona. Lo que está permitido no cambia: independientemente de la dirección a la que se acceda, se seguirá comprobando de la misma manera.",
+            "resolvers": "Servidores DNS",
+            "proxyUrl": " URL del proxy",
+            "proxyHint": "Un proxy http o https para enviar las peticiones de esta fuente. SOCKS no es compatible.",
+            "brief": "Sólo se necesita cuando la ruta por defecto a esta fuente no funciona.",
+            "resolversBrief": "Separados por comas. Se utilizan en lugar del resolvedor del sistema únicamente para esta fuente; si se deja en blanco, se utiliza el del sistema.",
+            "proxyBrief": "Un proxy http o https para esta fuente. SOCKS no es compatible."
+          },
+          "types": {
+            "torznab": "Torznab (Jackett, Prowlarr, NZBHydra)"
+          },
+          "fields": {
+            "name": "Nombre",
+            "type": "Tipo de indexador",
+            "baseUrl": "URL base",
+            "baseUrlHint": {
+              "torznab": "La URL de la fuente Torznab, sin la cadena de consulta. Jackett la muestra en cada indexador como «Torznab Feed»."
+            },
+            "credential": {
+              "apiKey": "Clave API",
+              "sessionId": "ID de sesión"
+            },
+            "credentialKeep": "Dejar en blanco para mantener la contraseña almacenada",
+            "credentialClear": "Limpiar",
+            "credentialKeepAction": "Mantener",
+            "credentialWillClear": "La contraseña almacenada se elimina al guardar",
+            "enabled": "Activado"
+          }
+        }
       }
     },
     "nav": {
