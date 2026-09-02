@@ -9,6 +9,22 @@ type AcquisitionKind = 'idle' | 'new' | 'queued';
 export class InstrumentedPgPool extends Pool {
   private readonly logger = new Logger(InstrumentedPgPool.name);
 
+  constructor(...args: ConstructorParameters<typeof Pool>) {
+    super(...args);
+    // pg's own docs are explicit about this: a Pool re-emits errors from any idle client it
+    // holds as an 'error' event, and with nothing listening, Node treats that as an unhandled
+    // EventEmitter error and crashes the whole process. Confirmed live (2026-09-02): a dropped
+    // connection during a long-running concurrent query brought the entire app down with
+    // "Error: Connection terminated unexpectedly" and no other log line, restarted only because
+    // the container's restart policy caught it. This does not fix why a connection drops, only
+    // stops that from being fatal to the whole process.
+    this.on('error', (error: Error) => {
+      this.logger.error(
+        `[db.pool] [fail] errorClass=${error.constructor.name} error="${sanitizeLogValue(error.message)}" totalCount=${this.totalCount} idleCount=${this.idleCount} waitingCount=${this.waitingCount} - idle pool connection errored`,
+      );
+    });
+  }
+
   override connect(): Promise<PoolClient>;
   override connect(callback: ConnectCallback): void;
   override connect(callback?: ConnectCallback): Promise<PoolClient> | void {
