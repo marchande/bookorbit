@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, provide, ref, shallowRef, watch } from 'vue'
+import { computed, onActivated, onUnmounted, provide, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatNumber } from '@/i18n/formatters'
@@ -313,6 +313,15 @@ watch(
   },
   { immediate: true },
 )
+
+// HomeView is kept alive (AppLayout.vue's KeepAlive includes 'HomeView'), so navigating here
+// from a book's tag/genre pill while already viewing this same library never changes libraryId
+// and the watch above never re-fires - onActivated is what KeepAlive actually triggers on every
+// revisit, immediate or not, matching the pattern useBookViewWindow already uses for its own
+// reactivation logic (see its reshuffle-on-activate).
+onActivated(() => {
+  applyQuickFilterFromRoute()
+})
 
 function saveFilter() {
   if (libraryId.value === null || !filter.value) return
