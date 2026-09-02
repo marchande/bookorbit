@@ -19,6 +19,14 @@ const LOOKUP_CHUNK_SIZE = 500;
 // Bounds how many LOOKUP_CHUNK_SIZE queries run at once per strategy. High enough to cut
 // wall-clock time substantially on large libraries, low enough not to overwhelm the DB pool.
 const LOOKUP_CONCURRENCY = 4;
+// The title/author strategy's query is the expensive one (unnest + lateral join + fuzzy ILIKE
+// across the whole authors table) and its chunks stay checked out for far longer than the other
+// four strategies' simple indexed lookups. At LOOKUP_CONCURRENCY alongside the other strategies,
+// this can saturate the pool's entire max (5 strategies x 4 = the pool's max: 20 in db.module.ts),
+// leaving zero headroom for anything else the app needs the pool for concurrently - confirmed live
+// as a contributing factor to a connection getting dropped under sustained full saturation. A
+// lower, dedicated concurrency here still parallelizes meaningfully without pinning the whole pool.
+const TITLE_AUTHOR_LOOKUP_CONCURRENCY = 2;
 
 function found(bookId: number): LookupResult {
   return { kind: 'found', bookId };
@@ -375,7 +383,7 @@ export class MatchingService {
 
     const matchesByKey = new Map<string, { exact: Set<number>; approx: Set<number> }>();
     const allCandidates = [...candidates.values()];
-    const titleAuthorBatches = await this.runChunked(allCandidates, LOOKUP_CHUNK_SIZE, LOOKUP_CONCURRENCY, async (chunk) => {
+    const titleAuthorBatches = await this.runChunked(allCandidates, LOOKUP_CHUNK_SIZE, TITLE_AUTHOR_LOOKUP_CONCURRENCY, async (chunk) => {
       const values = sql.join(
         chunk.map(({ cacheKey, title, authors }) => {
           const authorValues = sql.join(
