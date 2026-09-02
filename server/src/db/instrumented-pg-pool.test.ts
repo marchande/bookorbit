@@ -58,4 +58,19 @@ describe('InstrumentedPgPool', () => {
 
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('[db.pool_acquire] [fail] acquisitionKind=idle'));
   });
+
+  it('does not crash the process when an idle client errors, and logs it instead', () => {
+    const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const pool = new InstrumentedPgPool({ max: 2 });
+    Object.defineProperty(pool, 'totalCount', { value: 1 });
+    Object.defineProperty(pool, 'idleCount', { value: 1 });
+    Object.defineProperty(pool, 'waitingCount', { value: 0 });
+
+    // A real pg.Pool re-emits an idle client's connection errors as its own 'error' event. With
+    // no listener attached, Node treats an unhandled 'error' event as fatal and throws it - this
+    // assertion would fail with an uncaught exception if the constructor's listener were removed.
+    expect(() => pool.emit('error', new Error('Connection terminated unexpectedly'))).not.toThrow();
+
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('[db.pool] [fail] errorClass=Error error="Connection terminated unexpectedly"'));
+  });
 });
