@@ -1011,6 +1011,27 @@ function providerLinkStyle(provider: string) {
   }
 }
 
+// Genre/tag pills jump to this book's library pre-filtered to that value, mirroring the
+// genre/tag quick-filter already available from the library table's column chips
+// (see VirtualBookTable.vue's getChipsActionFn). The filter itself is applied by
+// HomeView reading these query params on mount, since filter state there is otherwise
+// local/localStorage-only, not route-driven.
+function navigateWithQuickFilter(field: 'genre' | 'tag', value: string) {
+  router.push({
+    name: 'library',
+    params: { id: props.book.libraryId },
+    query: { quickFilterField: field, quickFilterValue: value },
+  })
+}
+
+function handleGenreClick(genre: string) {
+  navigateWithQuickFilter('genre', genre)
+}
+
+function handleTagClick(tag: string) {
+  navigateWithQuickFilter('tag', tag)
+}
+
 function handleEditMetadataFromScore() {
   scoreBreakdownOpen.value = false
   router.push({ name: 'book-detail', params: { bookId: props.book.id }, query: { tab: 'edit' } })
@@ -1809,14 +1830,16 @@ watch(
       <div v-if="book.genres.length || book.tags.length" class="space-y-1">
         <div v-if="book.genres.length" class="relative">
           <div data-test="genre-row" class="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap">
-            <span
+            <button
               v-for="(genre, index) in displayedGenres"
               :key="`${genre}-${index}`"
+              type="button"
               data-test="visible-genre"
-              class="chip-genre shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium"
+              class="chip-genre shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              @click="() => handleGenreClick(genre)"
             >
               {{ genre }}
-            </span>
+            </button>
             <Popover v-if="genreHiddenCount > 0">
               <PopoverTrigger as-child>
                 <button
@@ -1830,13 +1853,15 @@ watch(
               </PopoverTrigger>
               <PopoverContent align="start" class="w-80 max-w-[calc(100vw-2rem)] p-3">
                 <div data-test="hidden-genres" class="flex flex-wrap gap-1.5">
-                  <span
+                  <button
                     v-for="(genre, index) in hiddenGenres"
                     :key="`hidden-${genre}-${index}`"
-                    class="chip-genre rounded-md px-2 py-0.5 text-[11px] font-medium"
+                    type="button"
+                    class="chip-genre rounded-md px-2 py-0.5 text-[11px] font-medium transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    @click="() => handleGenreClick(genre)"
                   >
                     {{ genre }}
-                  </span>
+                  </button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -1866,7 +1891,15 @@ watch(
         </div>
 
         <div v-if="book.tags.length" class="flex flex-wrap gap-1.5">
-          <span v-for="tag in book.tags" :key="tag" class="chip-tag rounded-md border px-2 py-0.5 text-[11px] font-medium"> #{{ tag }} </span>
+          <button
+            v-for="tag in book.tags"
+            :key="tag"
+            type="button"
+            class="chip-tag rounded-md border px-2 py-0.5 text-[11px] font-medium transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+            @click="() => handleTagClick(tag)"
+          >
+            #{{ tag }}
+          </button>
         </div>
       </div>
 
