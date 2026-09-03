@@ -2115,6 +2115,10 @@ describe('BookService', () => {
       expect(onProgress).toHaveBeenCalledTimes(2);
       expect(onProgress).toHaveBeenNthCalledWith(1, 1);
       expect(onProgress).toHaveBeenNthCalledWith(2, 2);
+      // An explicit re-extract must force overwrite:true - otherwise a stale coverSource:'custom'
+      // DB row (e.g. the file it once pointed to is gone) silently blocks the refresh forever.
+      expect(metadataService.refreshCoverForBook).toHaveBeenNthCalledWith(1, 1, '/books/1.epub', 'epub', true);
+      expect(metadataService.refreshCoverForBook).toHaveBeenNthCalledWith(2, 2, '/books/2.epub', 'epub', true);
     });
 
     it('stops bulk cover extraction when progress callback throws', async () => {

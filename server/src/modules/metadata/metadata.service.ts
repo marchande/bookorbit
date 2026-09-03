@@ -219,7 +219,18 @@ export class MetadataService {
     await this.scoreService.calculateAndSave(bookId);
   }
 
-  async refreshCoverForBook(bookId: number, absolutePath: string, format: string): Promise<boolean> {
+  /**
+   * `overwrite` distinguishes two very different callers of the same refresh logic:
+   * - Routine background scan (default false): first-writer-wins, so it never clobbers a real
+   *   custom cover the user set intentionally.
+   * - An explicit user-requested re-extract/regenerate action (true): the user is asking this
+   *   specific book to be re-derived from its file right now, so a stale `coverSource: 'custom'`
+   *   DB row left over from a cover that no longer exists on disk must not silently block it -
+   *   confirmed live 2026-09-03: an entire library's app-data volume lost every cover file to a
+   *   container rebuild, but every book's DB row still said 'custom', so the bulk re-extract action
+   *   kept skipping the thumbnail write on every run, looking like the button just didn't work.
+   */
+  async refreshCoverForBook(bookId: number, absolutePath: string, format: string, overwrite = false): Promise<boolean> {
     const event = 'metadata.cover_refresh';
     const startedAt = Date.now();
     if (!this.extractionService.supports(format)) {
@@ -243,7 +254,7 @@ export class MetadataService {
         );
         return false;
       }
-      await this.persistCover(bookId, data.cover, false);
+      await this.persistCover(bookId, data.cover, overwrite);
     } catch (error) {
       const errorClass = error instanceof Error ? error.name : 'Error';
       const errorMessage = sanitizeLogValue(error instanceof Error ? error.message : String(error));

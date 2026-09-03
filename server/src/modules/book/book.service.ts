@@ -2888,7 +2888,10 @@ export class BookService {
           continue;
         }
         processed++;
-        const saved = await this.metadataService.refreshCoverForBook(id, file.absolutePath, file.format ?? '');
+        // This is an explicit user-requested re-extract, not a routine background scan - force the
+        // write even if the DB still claims a 'custom' cover, since that value can be stale (e.g.
+        // the file it points to no longer exists on disk).
+        const saved = await this.metadataService.refreshCoverForBook(id, file.absolutePath, file.format ?? '', true);
         if (saved) {
           updated++;
         }
