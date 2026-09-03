@@ -19,8 +19,8 @@ const LOOKUP_CHUNK_SIZE = 500;
 // Bounds how many LOOKUP_CHUNK_SIZE queries run at once per strategy. High enough to cut
 // wall-clock time substantially on large libraries, low enough not to overwhelm the DB pool.
 const LOOKUP_CONCURRENCY = 4;
-// The title/author strategy's query is the expensive one (unnest + lateral join + fuzzy ILIKE
-// across the whole authors table) and its chunks stay checked out for far longer than the other
+// The title/author strategy's query is the expensive one (unnest + lateral join + fuzzy
+// accent-insensitive match across the whole authors table) and its chunks stay checked out for far longer than the other
 // four strategies' simple indexed lookups. At LOOKUP_CONCURRENCY alongside the other strategies,
 // this can saturate the pool's entire max (5 strategies x 4 = the pool's max: 20 in db.module.ts),
 // leaving zero headroom for anything else the app needs the pool for concurrently - confirmed live
@@ -398,7 +398,7 @@ export class MatchingService {
         }),
         sql`, `,
       );
-      // This fuzzy-match query (unnest + lateral join + unaccent/ILIKE across the whole
+      // This fuzzy-match query (unnest + lateral join + accent-insensitive match across the whole
       // authors table) is legitimately expensive, and now that chunks for this strategy run
       // concurrently, contention between them can push a single chunk past the pool's default
       // 30s statement_timeout (db.module.ts) even though each one used to fit comfortably when
