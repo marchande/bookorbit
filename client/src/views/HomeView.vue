@@ -278,13 +278,22 @@ function dismissQuerySelectionBanner() {
 // column chips already produce (see VirtualBookTable.vue's getChipsActionFn). Filter state
 // here is otherwise local/localStorage-only, not route-driven, so this is read once on
 // arrival and then stripped from the URL rather than kept live in sync with it.
+//
+// Deliberately replaces filter.value outright rather than going through handleQuickFilter
+// (which ANDs a new rule onto whatever's already active - correct for the table's own
+// in-context chip clicks, where you're already browsing a filtered view and narrowing
+// further makes sense). A pill on the book detail page is a fresh navigation from an
+// unrelated book, not a refinement of leftover filter state - confirmed live: clicking a
+// tag pill after previously filtering by a different, non-overlapping tag produced an
+// impossible "A AND B" filter and a blank result set, working only by coincidence when
+// no prior filter existed yet to stack onto.
 function applyQuickFilterFromRoute() {
   const field = route.query.quickFilterField
   const value = route.query.quickFilterValue
   if (typeof field !== 'string' || typeof value !== 'string') return
   if (field !== 'genre' && field !== 'tag') return
 
-  handleQuickFilter({ type: 'rule', field, operator: 'includesAny', value: [value] })
+  filter.value = { type: 'group', join: 'AND', rules: [{ type: 'rule', field, operator: 'includesAny', value: [value] }] }
 
   const nextQuery = { ...route.query }
   delete nextQuery.quickFilterField
