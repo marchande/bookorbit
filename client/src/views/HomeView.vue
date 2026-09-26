@@ -246,6 +246,13 @@ function handleTableDensityChange(value: 'compact' | 'comfortable' | 'roomy') {
   tableDensity.value = value
 }
 
+// Drives the Select all / Deselect all toggle on the selection bar, so grid and list
+// views get the same bulk selection the table header checkbox already offers.
+const allLoadedSelected = computed(() => {
+  const ids = books.value.filter((book) => !book.collapsedSeries).map((book) => book.id)
+  return (ids.length > 0 && ids.every((id) => selectedIds.value.has(id))) || querySelection.value !== null
+})
+
 function handleSelectAllLoaded(checked: boolean) {
   const ids = books.value.filter((book) => !book.collapsedSeries).map((book) => book.id)
   if (checked) {
@@ -1063,6 +1070,9 @@ defineOptions({ name: 'HomeView' })
     <SelectionActionBar
       :metadata-editable="canEditSelectionMetadata"
       :visible="selectionMode"
+      select-all-available
+      :all-selected="allLoadedSelected"
+      @toggle-select-all="handleSelectAllLoaded(!allLoadedSelected)"
       :count="querySelection ? querySelection.total : selectedCount"
       :in-flight="inFlight"
       :query-scoped="querySelection !== null"

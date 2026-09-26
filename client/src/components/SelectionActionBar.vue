@@ -9,6 +9,8 @@ import {
   FolderMinus,
   FolderPlus,
   ImageDown,
+  ListChecks,
+  ListX,
   Lock,
   Loader2,
   Mail,
@@ -73,6 +75,13 @@ const props = withDefaults(
     // Selection is query-scoped (all matching across pages), so individual ids aren't enumerable.
     queryScoped?: boolean
     metadataEditable?: boolean
+    // When set, shows a Select all / Deselect all toggle next to the count so every
+    // view that uses this bar gets bulk selection, not just the table header checkbox.
+    selectAllAvailable?: boolean
+    allSelected?: boolean
+    // Metadata export is scoped to library/collection/smart-scope queries; views
+    // without a matching export scope hide the entry instead of exporting the wrong set.
+    hideExportMetadata?: boolean
   }>(),
   { metadataEditable: true },
 )
@@ -94,6 +103,7 @@ const emit = defineEmits<{
   'move-to-library': []
   delete: []
   exit: []
+  'toggle-select-all': []
 }>()
 
 const { t } = useI18n()
@@ -287,6 +297,23 @@ watch(
               count
             }}</span>
 
+            <Tooltip v-if="selectAllAvailable">
+              <TooltipTrigger as-child>
+                <button
+                  data-testid="action-toggle-select-all"
+                  :class="[BTN_ICON, BTN_MUTED]"
+                  :aria-label="allSelected ? t('components.selectionActionBar.deselectAll') : t('components.selectionActionBar.selectAll')"
+                  @click="emit('toggle-select-all')"
+                >
+                  <ListX v-if="allSelected" :size="ICON_SIZE" />
+                  <ListChecks v-else :size="ICON_SIZE" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top">{{
+                allSelected ? t('components.selectionActionBar.deselectAll') : t('components.selectionActionBar.selectAll')
+              }}</TooltipContent>
+            </Tooltip>
+
             <div :class="DIVIDER" />
 
             <Tooltip v-if="canBulkActions">
@@ -467,7 +494,7 @@ watch(
                           </DropdownMenuSubContent>
                         </DropdownMenuSub>
                       </template>
-                      <template v-if="canDownload">
+                      <template v-if="canDownload && !hideExportMetadata">
                         <DropdownMenuSeparator v-if="canEditMetadata" />
                         <DropdownMenuItem data-testid="action-export-metadata" @click="emit('export-metadata')">
                           <FileSpreadsheet :size="14" />

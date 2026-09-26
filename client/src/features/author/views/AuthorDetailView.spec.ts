@@ -147,8 +147,9 @@ const VirtualBookGridStub = defineComponent({
       type: Array,
       required: true,
     },
+    selectionMode: { type: Boolean, default: false },
   },
-  emits: ['action', 'update:book'],
+  emits: ['action', 'update:book', 'select'],
   template: '<div data-test="virtual-book-grid" />',
 })
 
@@ -227,6 +228,7 @@ async function mountView() {
           template: '<div />',
         },
         DeleteBookDialog: DeleteBookDialogStub,
+        BookSelectionHost: true,
         EntityNotFound: true,
         VirtualBookGrid: VirtualBookGridStub,
       },
@@ -515,6 +517,20 @@ describe('AuthorDetailView', () => {
     expect(mocks.author.value?.description).toBe('Scottish novelist.')
     expect(mocks.loadMetadataPreview).toHaveBeenCalled()
     expect(wrapper.find('[data-test="author-match-sheet"]').exists()).toBe(false)
+  })
+
+  it('enters select mode from the toolbar and selects books clicked in the grid', async () => {
+    const wrapper = await mountView()
+
+    const grid = wrapper.getComponent(VirtualBookGridStub)
+    expect(grid.props('selectionMode')).toBe(false)
+
+    await wrapper.get('[data-testid="author-selection-toggle"]').trigger('click')
+    expect(grid.props('selectionMode')).toBe(true)
+
+    await grid.vm.$emit('select', 101, new MouseEvent('click'))
+    const host = wrapper.getComponent({ name: 'BookSelectionHost' }).props('host') as { selectedIds: { value: Set<number> } }
+    expect([...host.selectedIds.value]).toEqual([101])
   })
 
   it('deletes a book from the author grid menu action', async () => {
