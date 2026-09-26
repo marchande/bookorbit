@@ -158,8 +158,9 @@ const VirtualBookGridStub = defineComponent({
       type: Array as PropType<BookCard[]>,
       required: true,
     },
+    selectionMode: { type: Boolean, default: false },
   },
-  emits: ['action', 'update:book'],
+  emits: ['action', 'update:book', 'select'],
   setup(props) {
     const bookIds = computed(() => props.books.map((book) => book.id).join(','))
     return { bookIds }
@@ -243,6 +244,7 @@ function mountView() {
       stubs: {
         VirtualBookGrid: VirtualBookGridStub,
         AddToCollectionSheet: AddToCollectionSheetStub,
+        BookSelectionHost: true,
         BookCoverArtwork: BookCoverArtworkStub,
         BookQuickView: BookQuickViewStub,
         EntityNotFound: true,
@@ -401,6 +403,25 @@ describe('SeriesDetailView', () => {
     expect(wrapper.find('[data-testid="series-media-group-books"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="series-media-group-audiobooks"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-testid="virtual-book-grid"]')).toHaveLength(1)
+  })
+
+  it('enters select mode from the toolbar and selects books clicked in the grid', async () => {
+    mocks.items = ref([makeBook({ id: 7 }), makeBook({ id: 8 })])
+    mocks.total = ref(2)
+    mocks.seriesInfo = ref({ ...makeSeriesInfo(), bookCount: 2 })
+
+    const wrapper = mountView()
+    await nextTick()
+
+    const grid = wrapper.getComponent(VirtualBookGridStub)
+    expect(grid.props('selectionMode')).toBe(false)
+
+    await wrapper.get('[data-testid="series-selection-toggle"]').trigger('click')
+    expect(grid.props('selectionMode')).toBe(true)
+
+    await grid.vm.$emit('select', 8, new MouseEvent('click'))
+    const host = wrapper.getComponent({ name: 'BookSelectionHost' }).props('host') as { selectedIds: { value: Set<number> } }
+    expect([...host.selectedIds.value]).toEqual([8])
   })
 
   it('opens AddToCollectionSheet with the clicked book id from grid actions', async () => {

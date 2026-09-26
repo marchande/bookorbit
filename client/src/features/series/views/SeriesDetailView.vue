@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatNumber } from '@/i18n/formatters'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, Pencil } from '@lucide/vue'
+import { CheckSquare, ChevronLeft, Pencil, Square } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 
 import type { BookCard, BookDetail } from '@bookorbit/types'
@@ -25,6 +25,8 @@ import AddToCollectionSheet from '@/features/collection/components/AddToCollecti
 import BookQuickView from '@/features/book/components/BookQuickView.vue'
 import DeleteBookDialog from '@/features/book/components/DeleteBookDialog.vue'
 import { useDeleteBook } from '@/features/book/composables/useDeleteBook'
+import BookSelectionHost from '@/features/book/components/BookSelectionHost.vue'
+import { useBookSelectionHost } from '@/features/book/composables/useBookSelectionHost'
 import SeriesCompletionBar from '../components/SeriesCompletionBar.vue'
 import SeriesOwnershipBar from '../components/SeriesOwnershipBar.vue'
 import SeriesGapBanner from '../components/SeriesGapBanner.vue'
@@ -74,6 +76,15 @@ const {
   libraryId,
   load: loadBooks,
 } = useSeriesDetail(seriesId)
+
+// Select mode for bulk actions on this series' books (upstream #355).
+const selectionMode = ref(false)
+const selection = useBookSelectionHost({
+  books,
+  selectionMode,
+  onBooksChanged: () => void loadBooks({ reset: true, keepPreviousData: true }),
+})
+watch(seriesId, () => selection.exitSelectionMode())
 
 const pageTitle = computed(() => {
   if (seriesInfo.value?.name) return t('series.detail.pageTitleNamed', { name: seriesInfo.value.name })
@@ -637,6 +648,17 @@ defineOptions({ name: 'SeriesDetailView' })
                 {{ t('series.detail.booksHeading') }}
               </h2>
               <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <button
+                  type="button"
+                  data-testid="series-selection-toggle"
+                  class="flex h-8 items-center justify-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors"
+                  :class="selectionMode ? 'border-primary/40 bg-primary/10 text-primary' : 'border-input text-muted-foreground hover:text-foreground'"
+                  @click="selection.toggleSelectionMode()"
+                >
+                  <CheckSquare v-if="selectionMode" :size="14" />
+                  <Square v-else :size="14" />
+                  {{ t('components.viewHeader.select') }}
+                </button>
                 <select
                   v-model="sort"
                   class="h-8 w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-sm outline-none transition-colors focus:border-primary/60 sm:w-auto"
@@ -694,7 +716,10 @@ defineOptions({ name: 'SeriesDetailView' })
                   :grid-gap="gridGap"
                   :square-cover-scale="SERIES_SQUARE_COVER_SCALE"
                   :virtualized="false"
+                  :selection-mode="selectionMode"
+                  :is-selected="selection.isSelected"
                   @action="handleBookAction"
+                  @select="selection.handleSelect"
                   @update:book="handleBookUpdate"
                 />
               </section>
@@ -707,7 +732,10 @@ defineOptions({ name: 'SeriesDetailView' })
               :grid-gap="gridGap"
               :square-cover-scale="SERIES_SQUARE_COVER_SCALE"
               :virtualized="false"
+              :selection-mode="selectionMode"
+              :is-selected="selection.isSelected"
               @action="handleBookAction"
+              @select="selection.handleSelect"
               @update:book="handleBookUpdate"
             />
           </template>
@@ -721,6 +749,8 @@ defineOptions({ name: 'SeriesDetailView' })
         </section>
       </template>
     </main>
+
+    <BookSelectionHost :host="selection" :include-book-dialogs="false" />
 
     <AddToCollectionSheet
       :open="addToCollectionOpen"

@@ -250,3 +250,41 @@ describe('SelectionActionBar demo restriction', () => {
     expect(wrapper.find('select').exists()).toBe(false)
   })
 })
+
+describe('SelectionActionBar select-all toggle', () => {
+  beforeEach(() => {
+    permissionState.allowed = new Set(['library_edit_metadata', 'library_download'])
+    permissionState.demoRestricted = false
+  })
+
+  function mountWith(extra: Record<string, unknown>) {
+    return mount(SelectionActionBar, {
+      props: { visible: true, count: 3, inFlight: null, ...extra },
+      global: globalStubs,
+    })
+  }
+
+  it('is hidden unless the host view opts in', () => {
+    const wrapper = mountWith({})
+    expect(wrapper.find('[data-testid="action-toggle-select-all"]').exists()).toBe(false)
+  })
+
+  it('offers Select all when not everything is selected and emits the toggle', async () => {
+    const wrapper = mountWith({ selectAllAvailable: true, allSelected: false })
+    const toggle = wrapper.get('[data-testid="action-toggle-select-all"]')
+    expect(toggle.attributes('aria-label')).toBe('Select all')
+
+    await toggle.trigger('click')
+    expect(wrapper.emitted('toggle-select-all')).toHaveLength(1)
+  })
+
+  it('switches to Deselect all once everything is selected', () => {
+    const wrapper = mountWith({ selectAllAvailable: true, allSelected: true })
+    expect(wrapper.get('[data-testid="action-toggle-select-all"]').attributes('aria-label')).toBe('Deselect all')
+  })
+
+  it('hides metadata export for views without an export scope', () => {
+    expect(mountWith({}).find('[data-testid="action-export-metadata"]').exists()).toBe(true)
+    expect(mountWith({ hideExportMetadata: true }).find('[data-testid="action-export-metadata"]').exists()).toBe(false)
+  })
+})

@@ -1,8 +1,21 @@
 <script setup lang="ts">
-import { computed, ref, useAttrs } from 'vue'
+import { computed, onUnmounted, ref, useAttrs } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core'
-import { Aperture, BookMarked, BookmarkPlus, ChevronLeft, ChevronRight, Headphones, ListOrdered, RefreshCw, Shuffle, Sparkles } from '@lucide/vue'
+import {
+  Aperture,
+  BookMarked,
+  BookmarkPlus,
+  ChevronLeft,
+  ChevronRight,
+  Headphones,
+  ListChecks,
+  ListOrdered,
+  ListX,
+  RefreshCw,
+  Shuffle,
+  Sparkles,
+} from '@lucide/vue'
 
 import type { BookCard, BookScrollerType } from '@bookorbit/types'
 import BookCoverCard from '@/features/book/components/BookCoverCard.vue'
@@ -11,6 +24,7 @@ import AddToCollectionSheet from '@/features/collection/components/AddToCollecti
 import DeleteBookDialog from '@/features/book/components/DeleteBookDialog.vue'
 import { useDashboardScroller } from '../composables/useDashboardScroller'
 import { useDeleteBook } from '@/features/book/composables/useDeleteBook'
+import { useDashboardSelection } from '../composables/useDashboardSelection'
 import { MIN_SHELF_ROWS, chunkIntoBands, effectiveShelfRows, shelfBookLimit } from '../lib/shelf-rows'
 
 defineOptions({
@@ -42,6 +56,14 @@ const { books, loading, error, refresh } = useDashboardScroller(
 )
 
 const bands = computed(() => chunkIntoBands(books.value, shelfRows.value))
+
+// Dashboard-wide select mode: this shelf's books join the dashboard selection.
+const dashboardSelection = useDashboardSelection()
+const selectionMode = computed(() => dashboardSelection?.selectionMode.value ?? false)
+const shelfSelected = computed(() => dashboardSelection?.isShelfSelected(books.value) ?? false)
+const shelfKey = Symbol('dashboard-shelf')
+dashboardSelection?.registerShelf(shelfKey, books)
+onUnmounted(() => dashboardSelection?.unregisterShelf(shelfKey))
 
 const scrollEl = ref<HTMLElement | null>(null)
 
@@ -125,6 +147,17 @@ function coverAnimationDelay(index: number): string {
           {{ books.length }}
         </span>
       </div>
+      <button
+        v-if="selectionMode && !loading && !error && books.length > 0"
+        type="button"
+        data-testid="shelf-toggle-select"
+        class="ml-auto mr-1 flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        @click="dashboardSelection?.toggleShelf(books)"
+      >
+        <ListX v-if="shelfSelected" :size="14" />
+        <ListChecks v-else :size="14" />
+        {{ shelfSelected ? t('components.selectionActionBar.deselectAll') : t('components.selectionActionBar.selectAll') }}
+      </button>
       <div class="flex items-center gap-0.5 opacity-0 transition-opacity duration-200 group-hover/scroller:opacity-100">
         <button
           class="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -187,7 +220,14 @@ function coverAnimationDelay(index: number): string {
             style="animation: dashboardFadeUp 0.35s ease both"
             :style="{ animationDelay: coverAnimationDelay(index) }"
           >
-            <BookCoverCard :book="book" :cover-aspect-ratio="book.coverAspectRatio" @action="handleBookAction(book, $event)" />
+            <BookCoverCard
+              :book="book"
+              :cover-aspect-ratio="book.coverAspectRatio"
+              :selection-mode="selectionMode"
+              :selected="dashboardSelection?.isSelected(book.id) ?? false"
+              @action="handleBookAction(book, $event)"
+              @select="dashboardSelection?.handleSelect(book.id, $event)"
+            />
           </div>
         </div>
       </div>

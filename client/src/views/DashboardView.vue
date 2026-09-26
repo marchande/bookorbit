@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, Loader2, RefreshCw, Settings2, Sparkles } from '@lucide/vue'
+import { AlertTriangle, CheckSquare, Loader2, RefreshCw, Settings2, Sparkles, Square } from '@lucide/vue'
 import { isPodcastScrollerType, type BookScrollerType } from '@bookorbit/types'
 
 import { useAuth } from '@/features/auth/composables/useAuth'
@@ -13,6 +13,8 @@ import DashboardScroller from '@/features/dashboard/components/DashboardScroller
 import DashboardSettingsSheet from '@/features/dashboard/components/DashboardSettingsSheet.vue'
 import DashboardWelcome from '@/features/dashboard/components/DashboardWelcome.vue'
 import DashboardWidgetRow from '@/features/dashboard/components/DashboardWidgetRow.vue'
+import BookSelectionHost from '@/features/book/components/BookSelectionHost.vue'
+import { provideDashboardSelection } from '@/features/dashboard/composables/useDashboardSelection'
 import { SHELF_LAYOUT, useDashboardConfig } from '@/features/dashboard/composables/useDashboardConfig'
 import { useDashboardLabels } from '@/features/dashboard/composables/useDashboardLabels'
 import { useOnboardingTour } from '@/features/onboarding/composables/useOnboardingTour'
@@ -29,6 +31,10 @@ const { smartScopes, loaded: smartScopesLoaded, fetchSmartScopes } = useSmartSco
 
 const settingsOpen = ref(false)
 const dashboardRevision = ref(0)
+// Select mode across every shelf, so books can be picked straight off the dashboard
+// (e.g. "Recently Added") for bulk metadata edits.
+const selection = provideDashboardSelection()
+const selectionMode = selection.selectionMode
 const now = ref(new Date())
 let greetingTimer: number | null = null
 
@@ -86,6 +92,7 @@ function handleOpenSettings() {
 }
 
 function handleDashboardSettingsSaved() {
+  selection.exitSelectionMode()
   dashboardRevision.value += 1
 }
 
@@ -145,16 +152,35 @@ onUnmounted(() => {
                 <span class="ml-1 font-semibold text-primary">{{ greetingName }}</span>
               </p>
             </div>
-            <!-- Icon-only below sm so the greeting keeps its width; the label stays available to assistive tech. -->
-            <button
-              type="button"
-              :aria-label="t('views.dashboard.customize')"
-              class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-primary/40 bg-card/40 px-2 py-1.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/70 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5"
-              @click="handleOpenSettings"
-            >
-              <Settings2 :size="15" aria-hidden="true" />
-              <span class="hidden sm:inline">{{ t('views.dashboard.customize') }}</span>
-            </button>
+            <div class="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                data-testid="dashboard-selection-toggle"
+                :aria-label="t('components.viewHeader.select')"
+                :aria-pressed="selectionMode"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1.5 text-sm font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5"
+                :class="
+                  selectionMode
+                    ? 'border-primary/70 bg-primary/10 text-primary'
+                    : 'border-primary/40 bg-card/40 text-foreground hover:border-primary/70 hover:bg-muted'
+                "
+                @click="selection.toggleSelectionMode()"
+              >
+                <CheckSquare v-if="selectionMode" :size="15" aria-hidden="true" />
+                <Square v-else :size="15" aria-hidden="true" />
+                <span class="hidden sm:inline">{{ t('components.viewHeader.select') }}</span>
+              </button>
+              <!-- Icon-only below sm so the greeting keeps its width; the label stays available to assistive tech. -->
+              <button
+                type="button"
+                :aria-label="t('views.dashboard.customize')"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-primary/40 bg-card/40 px-2 py-1.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/70 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5"
+                @click="handleOpenSettings"
+              >
+                <Settings2 :size="15" aria-hidden="true" />
+                <span class="hidden sm:inline">{{ t('views.dashboard.customize') }}</span>
+              </button>
+            </div>
           </div>
 
           <DashboardWidgetRow :key="`widgets-${dashboardRevision}`" class="animate-fade-up" />
@@ -187,6 +213,7 @@ onUnmounted(() => {
       </div>
     </main>
 
+    <BookSelectionHost :host="selection" :include-book-dialogs="false" />
     <DashboardSettingsSheet v-model:open="settingsOpen" @saved="handleDashboardSettingsSaved" />
   </div>
 </template>

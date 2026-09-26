@@ -4,7 +4,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatNumber } from '@/i18n/formatters'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowUpDown, ChevronDown, ChevronLeft, ImageMinus, Layers, LayoutGrid, List, Upload } from '@lucide/vue'
+import { ArrowUpDown, CheckSquare, ChevronDown, ChevronLeft, ImageMinus, Layers, LayoutGrid, List, Square, Upload } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 
 import type { AuthorDetail, AuthorSummary, BookCard } from '@bookorbit/types'
@@ -18,6 +18,8 @@ import { useLibraries } from '@/features/library/composables/useLibraries'
 import { usePermissions } from '@/features/auth/composables/usePermissions'
 import { usePageTitle } from '@/composables/usePageTitle'
 import { useDeleteBook } from '@/features/book/composables/useDeleteBook'
+import BookSelectionHost from '@/features/book/components/BookSelectionHost.vue'
+import { useBookSelectionHost } from '@/features/book/composables/useBookSelectionHost'
 import AuthorHeader from '../components/AuthorHeader.vue'
 import AuthorConfirmDialog from '../components/AuthorConfirmDialog.vue'
 import {
@@ -63,6 +65,15 @@ const {
   collapseSeries,
   load: loadBooks,
 } = useAuthorBooks(authorId)
+
+// Select mode for bulk actions on this author's books. Collapsed series cards stay
+// inert while selecting and are left out of select-all.
+const selectionMode = ref(false)
+const selection = useBookSelectionHost({
+  books,
+  selectionMode,
+  onBooksChanged: () => void loadBooks(true),
+})
 
 // One flag for every author page, so the state carries from one author to the next rather than
 // being re-chosen per author; the toggle below writes it back. Tracked rather than read once,
@@ -477,6 +488,7 @@ onUnmounted(() => {
 })
 
 watch(authorId, () => {
+  selection.exitSelectionMode()
   selectedMergeIds.value = []
   mergeCandidates.value = []
   mergeQuery.value = ''
@@ -755,6 +767,22 @@ defineOptions({ name: 'AuthorDetailView' })
               </select>
 
               <button
+                type="button"
+                data-testid="author-selection-toggle"
+                class="flex h-8 items-center justify-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors"
+                :class="
+                  selectionMode
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-input text-muted-foreground bg-background hover:text-foreground hover:bg-muted'
+                "
+                @click="selection.toggleSelectionMode()"
+              >
+                <CheckSquare v-if="selectionMode" :size="14" />
+                <Square v-else :size="14" />
+                {{ t('components.viewHeader.select') }}
+              </button>
+
+              <button
                 data-testid="author-collapse-series-toggle"
                 class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors"
                 :class="
@@ -807,12 +835,23 @@ defineOptions({ name: 'AuthorDetailView' })
             :books="books"
             :cover-size="authorBookCoverSize"
             :grid-gap="authorBookGridGap"
+            :selection-mode="selectionMode"
+            :is-selected="selection.isSelected"
             @action="handleBookAction"
+            @select="selection.handleSelect"
             @update:book="handleBookUpdate"
           />
 
           <div v-if="authorBooksViewMode === 'list' && books.length > 0" class="flex flex-col divide-y divide-border">
-            <BookListRow v-for="book in books" :key="book.id" :book="book" @action="handleBookAction(book, $event)" />
+            <BookListRow
+              v-for="book in books"
+              :key="book.id"
+              :book="book"
+              :selection-mode="selectionMode"
+              :selected="selection.isSelected(book.id)"
+              @action="handleBookAction(book, $event)"
+              @select="selection.handleSelect(book.id, $event)"
+            />
           </div>
 
           <div ref="sentinel" class="mt-4 flex h-8 items-center justify-center">
@@ -845,6 +884,8 @@ defineOptions({ name: 'AuthorDetailView' })
       @confirm="runMerge"
       @cancel="confirmMergeOpen = false"
     />
+
+    <BookSelectionHost :host="selection" :include-book-dialogs="false" />
 
     <DeleteBookDialog :open="deleteBookId !== null" :deleting="deletingBook" @confirm="confirmDelete" @cancel="cancelDelete" />
   </div>

@@ -7487,6 +7487,8 @@
       "exportMetadata": "Export metadata",
       "deleteSelected": "Delete selected",
       "exitSelection": "Exit selection",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
       "downloadFilesZipLabel": "Download files as ZIP:",
       "primaryOnly": "Primary only",
       "allFormats": "All formats",
