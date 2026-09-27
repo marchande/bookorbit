@@ -42,7 +42,10 @@ export class ComicFormatExtractor implements FormatExtractor {
       seriesIndex: comicMetadata?.seriesIndex ?? null,
       seriesTotalBooks: comicMetadata?.seriesTotalBooks ?? null,
       authors: comicMetadata?.authors ?? [],
+      // Tags without a Genre still fall back to genres (existing behaviour), but tags are now also kept as
+      // tags; before this they were dropped whenever the file had a Genre, and never saved as tags at all.
       genres: comicMetadata?.genres?.length ? comicMetadata.genres : (comicMetadata?.tags ?? []),
+      tags: comicMetadata?.tags ?? [],
       googleBooksId: comicMetadata?.googleBooksId ?? null,
       goodreadsId: comicMetadata?.goodreadsId ?? null,
       amazonId: comicMetadata?.amazonId ?? null,

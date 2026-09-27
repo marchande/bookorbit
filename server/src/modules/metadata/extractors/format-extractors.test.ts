@@ -427,6 +427,7 @@ describe('metadata format extractors', () => {
         publishedYear: 2014,
         authors: [],
         genres: [],
+        tags: [],
         comicvineId: null,
       }),
     );
@@ -454,10 +455,32 @@ describe('metadata format extractors', () => {
       expect.objectContaining({
         title: 'Batman',
         genres: ['Comics'],
+        tags: ['Superhero'],
         ranobedbId: 'comic-ranobe',
         comicvineId: '140529',
         comicMetadata: { issueNumber: '55', volumeName: 'Batman' },
       }),
+    );
+  });
+
+  it('comic extractor keeps ComicInfo Tags as tags and still falls back to them for genres when Genre is empty', async () => {
+    mockExtractCbzMetadata.mockResolvedValue({
+      title: 'Issue 1',
+      description: null,
+      publisher: null,
+      publishedYear: null,
+      language: null,
+      seriesName: 'Series',
+      seriesIndex: '1',
+      authors: [],
+      genres: [],
+      tags: ['Robotech', 'Comic'],
+      comicMetadata: null,
+    });
+    mockExtractCbzCover.mockResolvedValue(null);
+
+    await expect(new ComicFormatExtractor('cbz').extract('/books/issue.cbz')).resolves.toEqual(
+      expect.objectContaining({ genres: ['Robotech', 'Comic'], tags: ['Robotech', 'Comic'] }),
     );
   });
 
