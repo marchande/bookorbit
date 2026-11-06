@@ -47,7 +47,9 @@ export class AuditInterceptor implements NestInterceptor {
               resourceId: options.getResourceId?.(req, responseBody),
               description,
               ip: req.ip,
-              ...(meta ? { meta } : {}),
+              ...(meta || user?.apiKey
+                ? { meta: { ...meta, ...(user?.apiKey ? { apiKeyId: user.apiKey.id, apiKeyName: user.apiKey.name } : {}) } }
+                : {}),
               ...(resourceLabel ? { resourceLabel } : {}),
             });
           }),

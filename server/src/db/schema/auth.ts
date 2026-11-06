@@ -211,6 +211,32 @@ export const magicAccessTokens = pgTable(
 
 export type MagicAccessToken = typeof magicAccessTokens.$inferSelect;
 
+/**
+ * Scoped API keys. A key acts as its owner, but only with the permissions listed in `scopes`, so a
+ * script can be given exactly the access it needs. Only a SHA-256 of the key is kept; the key itself
+ * is shown once, when it is created.
+ */
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 100 }).notNull(),
+    keyPrefix: varchar('key_prefix', { length: 16 }).notNull(),
+    keyHash: varchar('key_hash', { length: 64 }).notNull().unique(),
+    scopes: text('scopes').array().notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  },
+  (t) => [index('api_keys_user_id_idx').on(t.userId)],
+);
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+
 export const contentFilterTypeEnum = pgEnum('content_filter_type', ['include', 'exclude']);
 
 export const userContentFilterTags = pgTable(

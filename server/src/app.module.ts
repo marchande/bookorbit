@@ -33,6 +33,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { CollectionModule } from './modules/collection/collection.module';
+import { ApiKeyModule } from './modules/api-key/api-key.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CbzModule } from './modules/reader/cbz/cbz.module';
 import { DjvuModule } from './modules/reader/djvu/djvu.module';
@@ -141,6 +142,7 @@ import { ReadAloudModule } from './modules/read-aloud/read-aloud.module';
     CommonModule,
     SeedModule,
     AuthModule,
+    ApiKeyModule,
     AppSettingsModule,
     UserModule,
     AuthorsModule,

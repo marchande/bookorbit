@@ -2,6 +2,9 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 import { Reflector } from '@nestjs/core';
 import { Permission } from '@bookorbit/types';
 
+import { API_KEY_READ_SCOPE } from '@bookorbit/types';
+
+import { DENY_API_KEY_KEY } from '../decorators/deny-api-key.decorator';
 import { FORBIDDEN_PERMISSION_KEY, type ForbiddenPermissionRule } from '../decorators/forbid-permission.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { ANY_PERMISSION_KEY } from '../decorators/require-any-permission.decorator';
@@ -20,7 +23,11 @@ export class PermissionGuard implements CanActivate {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [context.getHandler(), context.getClass()]);
     if (isPublic) return true;
 
-    const user = context.switchToHttp().getRequest<{ user: RequestUser }>().user;
+    const request = context.switchToHttp().getRequest<{ user: RequestUser; method?: string }>();
+    const user = request.user;
+    if (user?.apiKey && this.reflector.getAllAndOverride<boolean>(DENY_API_KEY_KEY, [context.getHandler(), context.getClass()])) {
+      throw new ForbiddenException('API keys cannot be used for this endpoint');
+    }
     const forbidden = this.reflector.getAllAndOverride<ForbiddenPermissionRule | undefined>(FORBIDDEN_PERMISSION_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -39,7 +46,14 @@ export class PermissionGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!required) return true;
+    if (!required) {
+      // API keys are deny-by-default: a route that asks for no permission is open to a key only
+      // for plain reads, and only when the key was given the `read` scope.
+      if (user?.apiKey && !(user.apiKey.scopes.includes(API_KEY_READ_SCOPE) && (request.method === 'GET' || request.method === 'HEAD'))) {
+        throw new ForbiddenException('This API key has no scope for this endpoint');
+      }
+      return true;
+    }
 
     const permissions = Array.isArray(required) ? required : [required];
     const missing = permissions.find((permission) => !this.permissionService.userHas(user, permission));

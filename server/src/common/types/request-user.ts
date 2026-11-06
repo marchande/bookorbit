@@ -1,6 +1,6 @@
 import { Permission } from '@bookorbit/types';
 import type { AuthenticationMethod } from '@bookorbit/types';
-import type { ContentFilterRules } from '@bookorbit/types';
+import type { ApiKeyScope, ContentFilterRules } from '@bookorbit/types';
 
 export interface RequestUser {
   id: number;
@@ -20,4 +20,6 @@ export interface RequestUser {
   authenticationMethod?: AuthenticationMethod;
   permissions: Permission[];
   contentFilters: ContentFilterRules;
+  /** Set when the request authenticated with an API key: the key's id, name and the only scopes it may use. */
+  apiKey?: { id: number; name: string; scopes: ApiKeyScope[] };
 }

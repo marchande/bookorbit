@@ -27,13 +27,13 @@ function makeUser(overrides: Partial<RequestUser> = {}): RequestUser {
   };
 }
 
-function makeContext(type: 'http' | 'ws' = 'http') {
+function makeContext(type: 'http' | 'ws' = 'http', request: Record<string, unknown> = { method: 'POST', url: '/api/v1/somewhere' }) {
   return {
     getType: () => type,
     getHandler: vi.fn(),
     getClass: vi.fn(),
     switchToHttp: () => ({
-      getRequest: () => ({ method: 'POST', url: '/api/v1/somewhere' }),
+      getRequest: () => request,
     }),
   } as unknown as ExecutionContext;
 }
@@ -46,26 +46,26 @@ describe('JwtAuthGuard', () => {
     vi.restoreAllMocks();
   });
 
-  it('lets gateway messages through without asking passport, which would read headers a socket does not have', () => {
+  it('lets gateway messages through without asking passport, which would read headers a socket does not have', async () => {
     const passport = passportCanActivate().mockReturnValue(false);
     const reflector = { getAllAndOverride: vi.fn() };
     const guard = new JwtAuthGuard(reflector as never);
 
-    expect(guard.canActivate(makeContext('ws'))).toBe(true);
+    await expect(guard.canActivate(makeContext('ws'))).resolves.toBe(true);
     expect(passport).not.toHaveBeenCalled();
   });
 
-  it('still authenticates every non-public HTTP request through passport', () => {
+  it('still authenticates every non-public HTTP request through passport', async () => {
     const passport = passportCanActivate().mockReturnValue(false);
     const reflector = { getAllAndOverride: vi.fn().mockReturnValue(undefined) };
     const guard = new JwtAuthGuard(reflector as never);
     const context = makeContext('http');
 
-    expect(guard.canActivate(context)).toBe(false);
+    await expect(guard.canActivate(context)).resolves.toBe(false);
     expect(passport).toHaveBeenCalledWith(context);
   });
 
-  it('returns true in canActivate for @Public routes', () => {
+  it('returns true in canActivate for @Public routes', async () => {
     const reflector = {
       getAllAndOverride: vi.fn((key: string) => {
         if (key === IS_PUBLIC_KEY) return true;
@@ -74,7 +74,7 @@ describe('JwtAuthGuard', () => {
     };
     const guard = new JwtAuthGuard(reflector as never);
 
-    expect(guard.canActivate(makeContext())).toBe(true);
+    await expect(guard.canActivate(makeContext())).resolves.toBe(true);
   });
 
   it('throws UnauthorizedException when passport strategy returns an error', () => {
@@ -124,5 +124,58 @@ describe('JwtAuthGuard', () => {
     expect(() =>
       guard.handleRequest(undefined, makeUser({ isDefaultPassword: true, authenticationMethod: 'oidc' }), undefined, makeContext()),
     ).not.toThrow();
+  });
+
+  describe('API keys', () => {
+    const keyUser = () => makeUser({ apiKey: { id: 9, name: 'script', scopes: ['library_delete_books'] as never } });
+    const keyRequest = (authorization: string) => ({ method: 'GET', url: '/api/v1/books', headers: { authorization } });
+
+    it('resolves a bo_ bearer token through the key service, not passport, and sets the request user', async () => {
+      const passport = passportCanActivate().mockReturnValue(false);
+      const reflector = { getAllAndOverride: vi.fn().mockReturnValue(undefined) };
+      const apiKeys = { authenticate: vi.fn().mockResolvedValue(keyUser()) };
+      const guard = new JwtAuthGuard(reflector as never, apiKeys as never);
+      const request = keyRequest('Bearer bo_secret');
+
+      await expect(guard.canActivate(makeContext('http', request))).resolves.toBe(true);
+      expect(apiKeys.authenticate).toHaveBeenCalledWith('bo_secret');
+      expect((request as { user?: RequestUser }).user?.apiKey?.id).toBe(9);
+      expect(passport).not.toHaveBeenCalled();
+    });
+
+    it('rejects a key the service refuses', async () => {
+      const reflector = { getAllAndOverride: vi.fn().mockReturnValue(undefined) };
+      const apiKeys = { authenticate: vi.fn().mockRejectedValue(new UnauthorizedException()) };
+      const guard = new JwtAuthGuard(reflector as never, apiKeys as never);
+
+      await expect(guard.canActivate(makeContext('http', keyRequest('Bearer bo_bad')))).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('rejects a key outright where the key module is not available', async () => {
+      const reflector = { getAllAndOverride: vi.fn().mockReturnValue(undefined) };
+      const guard = new JwtAuthGuard(reflector as never);
+
+      await expect(guard.canActivate(makeContext('http', keyRequest('Bearer bo_secret')))).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('still sends ordinary bearer JWTs to passport', async () => {
+      const passport = passportCanActivate().mockReturnValue(true);
+      const reflector = { getAllAndOverride: vi.fn().mockReturnValue(undefined) };
+      const apiKeys = { authenticate: vi.fn() };
+      const guard = new JwtAuthGuard(reflector as never, apiKeys as never);
+
+      await expect(guard.canActivate(makeContext('http', keyRequest('Bearer eyJhbGciOi.jwt')))).resolves.toBe(true);
+      expect(apiKeys.authenticate).not.toHaveBeenCalled();
+      expect(passport).toHaveBeenCalled();
+    });
+
+    it('keeps a key off the password-change routes while its owner still has the default password', () => {
+      const reflector = { getAllAndOverride: vi.fn((key: string) => key === ALLOW_DEFAULT_PASSWORD_KEY) };
+      const guard = new JwtAuthGuard(reflector as never);
+
+      expect(() =>
+        guard.handleRequest(null, makeUser({ isDefaultPassword: true, apiKey: { id: 1, name: 'k', scopes: [] } }), undefined, makeContext()),
+      ).toThrow(ForbiddenException);
+    });
   });
 });

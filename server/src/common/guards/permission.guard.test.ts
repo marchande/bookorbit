@@ -1,11 +1,13 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Permission } from '@bookorbit/types';
 
+import { DENY_API_KEY_KEY } from '../decorators/deny-api-key.decorator';
 import { FORBIDDEN_PERMISSION_KEY } from '../decorators/forbid-permission.decorator';
 import { ANY_PERMISSION_KEY } from '../decorators/require-any-permission.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PERMISSION_KEY } from '../decorators/require-permission.decorator';
 import type { RequestUser } from '../types/request-user';
+import { PermissionService } from '../services/permission.service';
 import { PermissionGuard } from './permission.guard';
 import { EMPTY_CONTENT_FILTER_RULES } from '@bookorbit/types';
 
@@ -226,5 +228,69 @@ describe('PermissionGuard', () => {
     expect(() => guard.canActivate(makeContext(makeUser()))).toThrow(`Missing permission: ${Permission.LibraryUpload}`);
     expect(permissionService.userHas).toHaveBeenCalledWith(expect.any(Object), Permission.BookDockAccess);
     expect(permissionService.userHas).toHaveBeenCalledWith(expect.any(Object), Permission.LibraryUpload);
+  });
+
+  describe('API keys', () => {
+    const keyUser = (scopes: string[], overrides: Partial<RequestUser> = {}) =>
+      makeUser({
+        permissions: [Permission.LibraryDeleteBooks, Permission.LibraryEditMetadata],
+        ...overrides,
+        apiKey: { id: 3, name: 'script', scopes: scopes as never },
+      });
+    const contextFor = (user: RequestUser, method = 'POST') =>
+      ({
+        getHandler: vi.fn(),
+        getClass: vi.fn(),
+        switchToHttp: () => ({ getRequest: () => ({ user, method }) }),
+      }) as unknown as ExecutionContext;
+    const routeRequiring = (permission?: Permission, deny = false) => ({
+      getAllAndOverride: vi.fn((key: string) => {
+        if (key === PERMISSION_KEY) return permission;
+        if (key === DENY_API_KEY_KEY) return deny;
+        return undefined;
+      }),
+    });
+    // The real service, so these tests cover the scope intersection and not a mock of it.
+    const guardFor = (reflector: ReturnType<typeof routeRequiring>) => new PermissionGuard(reflector as never, new PermissionService());
+
+    it('allows a route whose permission the key holds as a scope', () => {
+      expect(guardFor(routeRequiring(Permission.LibraryDeleteBooks)).canActivate(contextFor(keyUser([Permission.LibraryDeleteBooks])))).toBe(true);
+    });
+
+    it('refuses a permission the owner has but the key was not given', () => {
+      expect(() =>
+        guardFor(routeRequiring(Permission.LibraryEditMetadata)).canActivate(contextFor(keyUser([Permission.LibraryDeleteBooks]))),
+      ).toThrow(ForbiddenException);
+    });
+
+    it("narrows a superuser's key to its scopes too", () => {
+      const admin = keyUser([Permission.LibraryDeleteBooks], { isSuperuser: true, permissions: [] });
+      expect(() => guardFor(routeRequiring(Permission.ManageUsers)).canActivate(contextFor(admin))).toThrow(ForbiddenException);
+      expect(guardFor(routeRequiring(Permission.LibraryDeleteBooks)).canActivate(contextFor(admin))).toBe(true);
+    });
+
+    it('never grants a scope the owner no longer holds', () => {
+      const demoted = keyUser([Permission.ManageUsers]);
+      expect(() => guardFor(routeRequiring(Permission.ManageUsers)).canActivate(contextFor(demoted))).toThrow(ForbiddenException);
+    });
+
+    it('opens permission-free routes to a key only for reads with the read scope', () => {
+      expect(guardFor(routeRequiring()).canActivate(contextFor(keyUser(['read']), 'GET'))).toBe(true);
+      expect(guardFor(routeRequiring()).canActivate(contextFor(keyUser(['read']), 'HEAD'))).toBe(true);
+      expect(() => guardFor(routeRequiring()).canActivate(contextFor(keyUser(['read']), 'POST'))).toThrow(ForbiddenException);
+      expect(() => guardFor(routeRequiring()).canActivate(contextFor(keyUser([Permission.LibraryDeleteBooks]), 'GET'))).toThrow(ForbiddenException);
+    });
+
+    it('refuses any key on a @DenyApiKey route, whatever its scopes', () => {
+      const everything = keyUser(['read', Permission.LibraryDeleteBooks], { isSuperuser: true });
+      expect(() => guardFor(routeRequiring(undefined, true)).canActivate(contextFor(everything, 'GET'))).toThrow(ForbiddenException);
+    });
+
+    it('leaves signed-in sessions untouched by the key rules', () => {
+      const session = makeUser({ permissions: [Permission.LibraryEditMetadata] });
+      expect(guardFor(routeRequiring()).canActivate(contextFor(session, 'POST'))).toBe(true);
+      expect(guardFor(routeRequiring(undefined, true)).canActivate(contextFor(session, 'POST'))).toBe(true);
+      expect(guardFor(routeRequiring(Permission.LibraryEditMetadata)).canActivate(contextFor(session))).toBe(true);
+    });
   });
 });

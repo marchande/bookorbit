@@ -5420,6 +5420,7 @@
       "Series": "Series",
       "OidcIdentity": "OIDC identity",
       "MagicLinkToken": "Magic link",
+      "ApiKey": "API key",
       "ReadingInsightsProfile": "Reading insights profile"
     },
     "actionLabels": {
@@ -5433,6 +5434,8 @@
       "AuthPasswordAdminReset": "Reset user password",
       "AuthSessionRevoke": "Revoke session",
       "MagicLinkCreate": "Create magic link",
+      "ApiKeyCreate": "Create API key",
+      "ApiKeyRevoke": "Revoke API key",
       "MagicLinkLogin": "Sign in with magic link",
       "MagicLinkRevoke": "Revoke magic link",
       "MagicLinkActivate": "Activate magic link",

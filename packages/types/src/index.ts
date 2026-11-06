@@ -7,6 +7,7 @@ export * from "./display-preferences";
 export * from "./language";
 export * from "./locale";
 export * from "./permissions";
+export * from "./api-keys";
 export * from "./content-filter";
 export * from "./metadata-preferences";
 export * from "./custom-metadata";

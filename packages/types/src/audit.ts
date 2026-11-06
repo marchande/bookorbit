@@ -14,6 +14,8 @@ export enum AuditAction {
   MagicLinkRevoke = "magic_link.revoke",
   MagicLinkActivate = "magic_link.activate",
   MagicLinkDeactivate = "magic_link.deactivate",
+  ApiKeyCreate = "api_key.create",
+  ApiKeyRevoke = "api_key.revoke",
 
   OidcLogin = "auth.oidc.login",
   OidcUserProvisioned = "auth.oidc.user_provisioned",
@@ -174,6 +176,7 @@ export enum AuditResource {
   Series = "series",
   OidcIdentity = "oidc_identity",
   MagicLinkToken = "magic_link_token",
+  ApiKey = "api_key",
   ReadingInsightsProfile = "reading_insights_profile",
 }
 
