@@ -561,7 +561,8 @@
         "profile": "Profile",
         "privacy": "Privacy & Sharing",
         "notifications": "Notifications",
-        "restrictions": "Restrictions"
+        "restrictions": "Restrictions",
+        "apiKeys": "API keys"
       },
       "demoRestricted": {
         "cannotEdit": "Demo-restricted account cannot edit account settings",
@@ -4353,7 +4354,8 @@
         "auditLog": "Who changed what, and when.",
         "requests": "Sources, download clients, and what happens to a book once it downloads.",
         "readerTts": "Read-aloud voice, speed, and narration defaults.",
-        "adminTts": "Text-to-speech engines available to every reader on this server."
+        "adminTts": "Text-to-speech engines available to every reader on this server.",
+        "apiKeys": "Keys for scripts and tools, limited to the permissions you choose"
       },
       "backToApp": "Back to library",
       "pageDescriptions": {
@@ -4413,6 +4415,44 @@
       "discardConfirm": "Discard changes",
       "moreActions": "More actions",
       "removeQuestion": "Remove this?"
+    },
+    "apiKeys": {
+      "title": "API keys",
+      "subtitle": "Let scripts and tools use BookOrbit as you, with only the access you choose.",
+      "explainer": "A key acts as your account, but only with the scopes you tick. It can never do more than you can, it cannot sign in, change passwords or manage keys, and it stops working the moment you revoke it.",
+      "create": "Create key",
+      "empty": "No API keys yet.",
+      "readScope": "Read (browse and look up)",
+      "never": "never",
+      "created": "Created",
+      "lastUsed": "last used",
+      "expires": "expires",
+      "revoke": "Revoke",
+      "inactive": "Revoked or expired keys ({count})",
+      "revokedOn": "revoked {date}",
+      "expiredOn": "expired {date}",
+      "createFailed": "Could not create the key",
+      "revokeFailed": "Could not revoke the key",
+      "createDialog": {
+        "title": "Create an API key",
+        "description": "Give the key a name you will recognise and only the scopes it needs.",
+        "name": "Name",
+        "namePlaceholder": "e.g. Library cleanup script",
+        "scopes": "Scopes",
+        "scopesHint": "Only permissions you hold are listed. Pick the fewest that will do the job.",
+        "expires": "Expires (optional)",
+        "expiresHint": "Leave empty for a key that lasts until you revoke it."
+      },
+      "reveal": {
+        "title": "Copy your new key",
+        "description": "This is the only time the key is shown. Store it somewhere safe - if it is lost, revoke it and create a new one.",
+        "copy": "Copy key",
+        "done": "I have saved it"
+      },
+      "revokeDialog": {
+        "title": "Revoke this key?",
+        "description": "Anything using it will stop working immediately. This cannot be undone."
+      }
     }
   },
   "achievements": {
@@ -14453,7 +14493,8 @@
       "profile": "Account",
       "privacy": "Privacy & Sharing",
       "notifications": "Notifications",
-      "restrictions": "Content Restrictions"
+      "restrictions": "Content Restrictions",
+      "apiKeys": "API keys"
     },
     "smartScopes": "Smart Scopes",
     "collections": "Collections",

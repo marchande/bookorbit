@@ -54,6 +54,7 @@ const ACCOUNT_ROUTES: Record<AccountTab, string> = {
   privacy: 'settings-account-privacy',
   notifications: 'settings-notifications',
   restrictions: 'settings-account-restrictions',
+  'api-keys': 'settings-account-api-keys',
 }
 
 const APPEARANCE_ROUTES: Record<AppearanceTab, string> = {
@@ -191,6 +192,17 @@ export const routes: RouteRecordRaw[] = [
             name: 'settings-account-restrictions',
             component: () => import('@/features/settings/ContentRestrictionsSettings.vue'),
             meta: { title: () => t('titles.account.restrictions') },
+          },
+          {
+            path: 'account/api-keys',
+            name: 'settings-account-api-keys',
+            component: () => import('@/features/settings/ApiKeysSettings.vue'),
+            meta: {
+              maxWidth: 'max-w-4xl',
+              forbiddenPermission: Permission.DemoRestricted,
+              permissionFallback: 'settings-account-profile',
+              title: () => t('titles.account.apiKeys'),
+            },
           },
           {
             path: 'appearance',

@@ -247,6 +247,15 @@ export const SETTINGS_NAV: readonly SettingsNavGroup[] = [
         icon: Shield,
         keywords: 'restrict age rating mature hide content filter',
       },
+      {
+        id: 'api-keys',
+        routeName: 'settings-account-api-keys',
+        labelKey: 'settings.account.tabs.apiKeys',
+        descriptionKey: 'settings.nav.descriptions.apiKeys',
+        icon: KeyRound,
+        keywords: 'api key token script automation integration access scope',
+        isVisible: (context) => !context.isDemoRestricted,
+      },
     ],
   },
   {
